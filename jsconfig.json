@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "checkJs": true,
+    "strict": false,
+    "jsx": "preserve"
+  }
+}
