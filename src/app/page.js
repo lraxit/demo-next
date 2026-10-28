@@ -5,7 +5,7 @@ export default function Home() {
   return (
     <div>
       <div className="p-12">
-        <Header />
+        <Header>My First JS Page is LIVE!</Header>
         <Main />
       </div>
     </div>
