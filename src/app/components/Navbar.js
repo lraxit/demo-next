@@ -18,7 +18,10 @@ const nagivationButtons = [
 export default function Navbar() {
   return (
     <nav className="flex justify-between bg-indigo-50 p-4 items-center sticky top-0 shadow-lg z-100">
-      <a href="/" className="logo bg-stone-100 rounded-full pl-2 hover:scale-105 hover:bg-stone-200 transition-all cursor-pointer">
+      <a
+        href="/"
+        className="logo pl-1 pr-1 bg-stone-100 rounded-full ml-2 hover:scale-105 hover:bg-stone-200 transition-all cursor-pointer"
+      >
         <Battery50Icon className="w-8 text-yellow-500" />
         {/* <img className="w-50 h-auto rounded-full" src="/images/logo.png"/> */}
       </a>
