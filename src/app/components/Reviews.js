@@ -1,4 +1,4 @@
-import ReviewsCarousel from './ReviewsCarousel'
+import ReviewsCarousel from './ReviewsCarousel.js'
 
 export default async function Reviews() {
   const id = '2190a137-ae96-4965-a6dd-946ce564ede7'
