@@ -255,27 +255,14 @@ export default function ReviewsCarousel({
 
       {/* Infinite carousel with centered arrows */}
       {filteredReviews.length > 0 && (
-        <div className="relative group">
+        <div className="grid grid-cols-[2.25rem_minmax(0,1fr)_2.25rem] items-center gap-2 sm:grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] sm:gap-3">
           {/* Previous arrow */}
           <button
             type="button"
             aria-label="Previous review"
             disabled={filteredReviews.length <= 1}
             onClick={() => handleNavigation(-1)}
-            className="
-              absolute left-2 top-1/2 z-20
-              flex h-11 w-11
-              -translate-y-1/2
-              items-center justify-center
-              rounded-full border border-gray-200
-              bg-white text-gray-700 shadow-lg
-              transition-all duration-200
-              hover:scale-110 hover:bg-gray-100
-              active:scale-95
-              disabled:cursor-not-allowed
-              disabled:opacity-40
-              sm:left-0 sm:-translate-x-1/2
-            "
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 shadow-lg transition-transform duration-200 hover:scale-105 hover:bg-gray-100 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 sm:h-11 sm:w-11"
           >
             <ChevronLeftIcon className="h-5 w-5" />
           </button>
@@ -287,7 +274,7 @@ export default function ReviewsCarousel({
             aria-roledescription="carousel"
             aria-label="Customer reviews"
             aria-live="off"
-            className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden"
+            className="flex min-w-0 snap-x snap-mandatory gap-4 overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden"
             style={{ scrollbarWidth: 'none' }}
           >
             {loopedReviews.map((review, index) => {
@@ -324,7 +311,7 @@ export default function ReviewsCarousel({
                   className="
                     relative box-border w-full shrink-0 snap-start
                     rounded-2xl border border-gray-200
-                    bg-white p-6 shadow-sm
+                    bg-white p-4 shadow-sm sm:p-6
                     transition-shadow hover:shadow-md
                     sm:w-[calc((100%_-_1rem)/2)]
                     lg:w-[calc((100%_-_2rem)/3)]
@@ -401,20 +388,7 @@ export default function ReviewsCarousel({
             aria-label="Next review"
             disabled={filteredReviews.length <= 1}
             onClick={() => handleNavigation(1)}
-            className="
-              absolute right-2 top-1/2 z-20
-              flex h-11 w-11
-              -translate-y-1/2
-              items-center justify-center
-              rounded-full border border-gray-200
-              bg-white text-gray-700 shadow-lg
-              transition-all duration-200
-              hover:scale-110 hover:bg-gray-100
-              active:scale-95
-              disabled:cursor-not-allowed
-              disabled:opacity-40
-              sm:right-0 sm:translate-x-1/2
-            "
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 shadow-lg transition-transform duration-200 hover:scale-105 hover:bg-gray-100 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 sm:h-11 sm:w-11"
           >
             <ChevronRightIcon className="h-5 w-5" />
           </button>
