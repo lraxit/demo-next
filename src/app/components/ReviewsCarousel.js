@@ -16,7 +16,7 @@ function getSlideWidth(carousel) {
   return card.getBoundingClientRect().width + gap
 }
 
-// Reposition the carousel without a visible animation
+// Reposition without a visible animation
 function jumpWithoutAnimation(carousel, position) {
   const oldSnap = carousel.style.scrollSnapType
   const oldBehavior = carousel.style.scrollBehavior
@@ -33,6 +33,7 @@ function jumpWithoutAnimation(carousel, position) {
   })
 }
 
+// Google gradient logo
 function GoogleIcon() {
   return (
     <img
@@ -59,12 +60,12 @@ export default function ReviewsCarousel({
   const [isPaused, setIsPaused] = useState(false)
   const [navigationKey, setNavigationKey] = useState(0)
 
-  // Filter reviews based on minimum star rating
+  // Filter reviews by minimum star rating
   const filteredReviews = useMemo(() => {
     return reviews.filter((review) => Number(review.starRating) >= minStars)
   }, [reviews, minStars])
 
-  // Duplicate reviews to create an infinite carousel
+  // Duplicate reviews for infinite looping
   const loopedReviews = useMemo(() => {
     if (filteredReviews.length <= 1) {
       return filteredReviews
@@ -73,10 +74,10 @@ export default function ReviewsCarousel({
     return [...filteredReviews, ...filteredReviews, ...filteredReviews]
   }, [filteredReviews])
 
-  // Check whether any review is expanded
+  // Pause autoplay if a review is expanded
   const hasExpandedReview = filteredReviews.some((review, index) => expanded[review.reviewId ?? String(index)])
 
-  // Scroll forward or backward by one review
+  // Scroll by one review card
   const scroll = useCallback((direction) => {
     const carousel = carouselRef.current
     if (!carousel) return
@@ -88,11 +89,11 @@ export default function ReviewsCarousel({
 
     carousel.scrollBy({
       left: direction * distance,
-      behavior: reducedMotion ? 'instant' : 'smooth',
+      behavior: reducedMotion ? 'auto' : 'smooth',
     })
   }, [])
 
-  // Initialize and maintain the infinite loop
+  // Initialize and maintain the infinite carousel
   useLayoutEffect(() => {
     const carousel = carouselRef.current
     const count = filteredReviews.length
@@ -108,7 +109,7 @@ export default function ReviewsCarousel({
       return getSlideWidth(carousel) * count
     }
 
-    // Begin at the middle copy of the reviews
+    // Start on the middle copy of the reviews
     const centerCarousel = () => {
       const groupWidth = getGroupWidth()
 
@@ -117,8 +118,7 @@ export default function ReviewsCarousel({
       }
     }
 
-    // Move to an identical review in the middle set
-    // when crossing into either duplicated set
+    // Invisibly reposition to matching reviews
     const resetLoop = () => {
       const groupWidth = getGroupWidth()
       if (!groupWidth) return
@@ -134,7 +134,6 @@ export default function ReviewsCarousel({
 
     centerCarousel()
 
-    // Detect when scrolling has stopped
     let scrollTimer
 
     const handleScroll = () => {
@@ -151,7 +150,7 @@ export default function ReviewsCarousel({
 
     carousel.addEventListener('scrollend', resetLoop)
 
-    // Recalculate carousel when its dimensions change
+    // Recalculate when the screen changes size
     let previousWidth = carousel.clientWidth
     let previousSlideWidth = getSlideWidth(carousel)
 
@@ -185,7 +184,7 @@ export default function ReviewsCarousel({
     }
   }, [filteredReviews.length, minStars])
 
-  // Automatic scrolling
+  // Automatically advance the carousel
   useEffect(() => {
     if (!autoScroll || isPaused || hasExpandedReview || filteredReviews.length <= 1) {
       return
@@ -208,15 +207,15 @@ export default function ReviewsCarousel({
     }
   }, [autoScroll, autoScrollInterval, isPaused, hasExpandedReview, filteredReviews.length, navigationKey, scroll])
 
-  // Manual navigation
+  // Handle manual arrow navigation
   const handleNavigation = (direction) => {
     scroll(direction)
 
-    // Restart autoplay timer after manual navigation
+    // Restart autoplay timer
     setNavigationKey((prev) => prev + 1)
   }
 
-  // Expand or collapse an individual review
+  // Expand or collapse individual reviews
   const toggleReview = (id) => {
     setExpanded((prev) => ({
       ...prev,
@@ -240,38 +239,13 @@ export default function ReviewsCarousel({
       }}
     >
       {/* Header */}
-      <div className="mb-6 flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">What Our Customers Are Saying</h2>
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold text-gray-900">What Our Customers Are Saying</h2>
 
-          <p className="mt-1 text-sm text-gray-500">
-            {averageRating != null && `${averageRating} / 5`}
-            {totalReviewCount != null && ` · ${totalReviewCount} Google reviews`}
-          </p>
-        </div>
-
-        {/* Carousel arrows */}
-        <div className="flex shrink-0 gap-3">
-          <button
-            type="button"
-            aria-label="Previous review"
-            disabled={filteredReviews.length <= 1}
-            onClick={() => handleNavigation(-1)}
-            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 shadow-md transition-all hover:scale-105 hover:bg-gray-100 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            <ChevronLeftIcon className="h-5 w-5" />
-          </button>
-
-          <button
-            type="button"
-            aria-label="Next review"
-            disabled={filteredReviews.length <= 1}
-            onClick={() => handleNavigation(1)}
-            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 shadow-md transition-all hover:scale-105 hover:bg-gray-100 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            <ChevronRightIcon className="h-5 w-5" />
-          </button>
-        </div>
+        <p className="mt-1 text-sm text-gray-500">
+          {averageRating != null && `${averageRating} / 5`}
+          {totalReviewCount != null && ` · ${totalReviewCount} Google reviews`}
+        </p>
       </div>
 
       {/* Empty state */}
@@ -279,109 +253,173 @@ export default function ReviewsCarousel({
         <p className="py-8 text-center text-gray-500">No reviews meet the minimum rating of {minStars} stars.</p>
       )}
 
-      {/* Infinite carousel */}
-      <div
-        ref={carouselRef}
-        role="region"
-        aria-roledescription="carousel"
-        aria-label="Customer reviews"
-        aria-live="off"
-        className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden"
-        style={{ scrollbarWidth: 'none' }}
-      >
-        {loopedReviews.map((review, index) => {
-          const id = review.reviewId ?? String(index % filteredReviews.length)
+      {/* Infinite carousel with centered arrows */}
+      {filteredReviews.length > 0 && (
+        <div className="relative group">
+          {/* Previous arrow */}
+          <button
+            type="button"
+            aria-label="Previous review"
+            disabled={filteredReviews.length <= 1}
+            onClick={() => handleNavigation(-1)}
+            className="
+              absolute left-2 top-1/2 z-20
+              flex h-11 w-11
+              -translate-y-1/2
+              items-center justify-center
+              rounded-full border border-gray-200
+              bg-white text-gray-700 shadow-lg
+              transition-all duration-200
+              hover:scale-110 hover:bg-gray-100
+              active:scale-95
+              disabled:cursor-not-allowed
+              disabled:opacity-40
+              sm:left-0 sm:-translate-x-1/2
+            "
+          >
+            <ChevronLeftIcon className="h-5 w-5" />
+          </button>
 
-          const text = review.comment || ''
-          const isExpanded = Boolean(expanded[id])
-          const canExpand = text.length > MAX_CHARACTERS
+          {/* Review cards */}
+          <div
+            ref={carouselRef}
+            role="region"
+            aria-roledescription="carousel"
+            aria-label="Customer reviews"
+            aria-live="off"
+            className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden"
+            style={{ scrollbarWidth: 'none' }}
+          >
+            {loopedReviews.map((review, index) => {
+              const id = review.reviewId ?? String(index % filteredReviews.length)
 
-          const displayedText = isExpanded || !canExpand ? text : text.slice(0, MAX_CHARACTERS).trimEnd() + '…'
+              const text = review.comment || ''
+              const isExpanded = Boolean(expanded[id])
+              const canExpand = text.length > MAX_CHARACTERS
 
-          const reviewerName = review.reviewer?.displayName || 'Anonymous'
+              const displayedText = isExpanded || !canExpand ? text : text.slice(0, MAX_CHARACTERS).trimEnd() + '…'
 
-          const profilePhoto = review.reviewer?.profilePhotoUrl
+              const reviewerName = review.reviewer?.displayName || 'Anonymous'
 
-          const rating = Math.max(0, Math.min(5, Math.round(review.starRating || 0)))
+              const profilePhoto = review.reviewer?.profilePhotoUrl
 
-          const date = review.createTime ? new Date(review.createTime) : null
+              const rating = Math.max(0, Math.min(5, Math.round(review.starRating || 0)))
 
-          const dateLabel =
-            date && !Number.isNaN(date.getTime())
-              ? date.toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                  timeZone: 'UTC',
-                })
-              : ''
+              const date = review.createTime ? new Date(review.createTime) : null
 
-          return (
-            <article
-              key={`${index}-${id}`}
-              data-review-card
-              className="relative box-border w-full shrink-0 snap-start rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md sm:w-[calc((100%_-_1rem)/2)] lg:w-[calc((100%_-_2rem)/3)]"
-            >
-              {/* Google icon */}
-              <div className="absolute right-5 top-5">
-                <GoogleIcon />
-              </div>
+              const dateLabel =
+                date && !Number.isNaN(date.getTime())
+                  ? date.toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                      timeZone: 'UTC',
+                    })
+                  : ''
 
-              {/* Reviewer information */}
-              <div className="flex items-center gap-3 pr-9">
-                {/* Profile picture */}
-                <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-200 font-semibold text-gray-600">
-                  <span>{reviewerName.charAt(0).toUpperCase()}</span>
-
-                  {profilePhoto && (
-                    <img
-                      src={profilePhoto}
-                      alt={`${reviewerName}'s profile`}
-                      loading="lazy"
-                      referrerPolicy="no-referrer"
-                      className="absolute inset-0 h-full w-full object-cover"
-                      onError={(event) => {
-                        event.currentTarget.style.display = 'none'
-                      }}
-                    />
-                  )}
-                </div>
-
-                {/* Name and date */}
-                <div className="min-w-0">
-                  <p className="truncate font-semibold text-gray-900">{reviewerName}</p>
-
-                  <p className="text-sm text-gray-500">{dateLabel}</p>
-                </div>
-              </div>
-
-              {/* Star rating */}
-              <div className="mt-4 flex gap-0.5 text-xl" aria-label={`${review.starRating} out of 5 stars`}>
-                {Array.from({ length: 5 }, (_, i) => (
-                  <span key={i} aria-hidden="true" className={i < rating ? 'text-amber-500' : 'text-gray-200'}>
-                    ★
-                  </span>
-                ))}
-              </div>
-
-              {/* Review content */}
-              <p className="mt-3 whitespace-pre-line leading-relaxed text-gray-700">{displayedText}</p>
-
-              {/* Read more / Read less */}
-              {canExpand && (
-                <button
-                  type="button"
-                  aria-expanded={isExpanded}
-                  onClick={() => toggleReview(id)}
-                  className="mt-3 cursor-pointer font-medium text-blue-600 transition-colors hover:text-blue-800 hover:underline"
+              return (
+                <article
+                  key={`${index}-${id}`}
+                  data-review-card
+                  className="
+                    relative box-border w-full shrink-0 snap-start
+                    rounded-2xl border border-gray-200
+                    bg-white p-6 shadow-sm
+                    transition-shadow hover:shadow-md
+                    sm:w-[calc((100%_-_1rem)/2)]
+                    lg:w-[calc((100%_-_2rem)/3)]
+                  "
                 >
-                  {isExpanded ? 'Read less' : 'Read more'}
-                </button>
-              )}
-            </article>
-          )
-        })}
-      </div>
+                  {/* Google logo */}
+                  <div className="absolute right-5 top-5">
+                    <GoogleIcon />
+                  </div>
+
+                  {/* Reviewer information */}
+                  <div className="flex items-center gap-3 pr-9">
+                    {/* Profile picture */}
+                    <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-200 font-semibold text-gray-600">
+                      <span>{reviewerName.charAt(0).toUpperCase()}</span>
+
+                      {profilePhoto && (
+                        <img
+                          src={profilePhoto}
+                          alt={`${reviewerName}'s profile`}
+                          loading="lazy"
+                          referrerPolicy="no-referrer"
+                          className="absolute inset-0 h-full w-full object-cover"
+                          onError={(event) => {
+                            event.currentTarget.style.display = 'none'
+                          }}
+                        />
+                      )}
+                    </div>
+
+                    {/* Name and date */}
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-gray-900">{reviewerName}</p>
+
+                      <p className="text-sm text-gray-500">{dateLabel}</p>
+                    </div>
+                  </div>
+
+                  {/* Star rating */}
+                  <div className="mt-4 flex gap-0.5 text-xl" aria-label={`${review.starRating} out of 5 stars`}>
+                    {Array.from({ length: 5 }, (_, i) => (
+                      <span key={i} aria-hidden="true" className={i < rating ? 'text-amber-500' : 'text-gray-200'}>
+                        ★
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Review text */}
+                  <p className="mt-3 whitespace-pre-line leading-relaxed text-gray-700">{displayedText}</p>
+
+                  {/* Read more / Read less */}
+                  {canExpand && (
+                    <button
+                      type="button"
+                      aria-expanded={isExpanded}
+                      onClick={() => toggleReview(id)}
+                      className="
+                        mt-3 cursor-pointer font-medium
+                        text-blue-600 transition-colors
+                        hover:text-blue-800 hover:underline
+                      "
+                    >
+                      {isExpanded ? 'Read less' : 'Read more'}
+                    </button>
+                  )}
+                </article>
+              )
+            })}
+          </div>
+
+          {/* Next arrow */}
+          <button
+            type="button"
+            aria-label="Next review"
+            disabled={filteredReviews.length <= 1}
+            onClick={() => handleNavigation(1)}
+            className="
+              absolute right-2 top-1/2 z-20
+              flex h-11 w-11
+              -translate-y-1/2
+              items-center justify-center
+              rounded-full border border-gray-200
+              bg-white text-gray-700 shadow-lg
+              transition-all duration-200
+              hover:scale-110 hover:bg-gray-100
+              active:scale-95
+              disabled:cursor-not-allowed
+              disabled:opacity-40
+              sm:right-0 sm:translate-x-1/2
+            "
+          >
+            <ChevronRightIcon className="h-5 w-5" />
+          </button>
+        </div>
+      )}
     </section>
   )
 }

@@ -1,6 +1,6 @@
 import ReviewsCarousel from './ReviewsCarousel.js'
 
-export default async function Reviews({autoScroll = false, minStars = 4}) {
+export default async function Reviews({ autoScroll = false, minStars = 4 }) {
   const id = '2190a137-ae96-4965-a6dd-946ce564ede7'
 
   const response = await fetch(`https://featurable.com/api/v2/widgets/${id}`, { next: { revalidate: 3600 } })
