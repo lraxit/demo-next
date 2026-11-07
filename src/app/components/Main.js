@@ -2,6 +2,7 @@ import Reviews from './Reviews.js'
 import Card from './Card'
 import Content from './Content'
 import Flex from './Flex'
+import Carousel from './Carousel.js'
 
 const cards = [
   {
@@ -27,7 +28,7 @@ const cards = [
 export default function Main() {
   return (
     <main>
-      <Reviews autoScroll={true} />
+      <Reviews autoScroll={true} autoScrollInterval={500}/>
       <div className="flex gap-x-12 my-12 flex-wrap gap-y-6" id="card-container whitespace-pre-line">
         {cards.map((card, index) => (
           <Card key={index} title={card.title} image={card.img} description={card.desc} pills={card.pills} />

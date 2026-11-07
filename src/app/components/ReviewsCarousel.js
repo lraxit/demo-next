@@ -1,48 +1,46 @@
 'use client'
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid'
 
-const MAX_CHARACTERS = 180
+const GOOGLE_LOGO = 'https://upload.wikimedia.org/wikipedia/commons/3/3c/Google_Favicon_2025.svg'
 
-// Get the width of one review card, including its gap
-function getSlideWidth(carousel) {
-  const card = carousel.querySelector('[data-review-card]')
+function getSlideStep(carousel) {
+  const card = carousel?.querySelector('[data-review-card]')
   if (!card) return 0
 
-  const gap = parseFloat(window.getComputedStyle(carousel).columnGap) || 0
-
+  const gap = parseFloat(getComputedStyle(carousel).columnGap) || 0
   return card.getBoundingClientRect().width + gap
 }
 
-// Reposition without a visible animation
-function jumpWithoutAnimation(carousel, position) {
-  const oldSnap = carousel.style.scrollSnapType
-  const oldBehavior = carousel.style.scrollBehavior
-
+function jumpTo(carousel, left) {
+  const originalSnap = carousel.style.scrollSnapType
+  const originalBehavior = carousel.style.scrollBehavior
   carousel.style.scrollSnapType = 'none'
   carousel.style.scrollBehavior = 'auto'
-  carousel.scrollLeft = position
+  carousel.scrollLeft = left
 
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
-      carousel.style.scrollSnapType = oldSnap
-      carousel.style.scrollBehavior = oldBehavior
+      carousel.style.scrollSnapType = originalSnap
+      carousel.style.scrollBehavior = originalBehavior
     })
   })
 }
 
-// Google gradient logo
-function GoogleIcon() {
+function Arrow({ direction, onClick, disabled, className = '' }) {
+  const Icon = direction === 'previous' ? ChevronLeftIcon : ChevronRightIcon
+
   return (
-    <img
-      src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Google_Favicon_2025.svg"
-      alt="Google"
-      width={26}
-      height={26}
-      className="h-[26px] w-[26px] object-contain"
-    />
+    <button
+      type="button"
+      aria-label={direction === 'previous' ? 'Previous review' : 'Next review'}
+      onClick={onClick}
+      disabled={disabled}
+      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:opacity-30 ${className}`}
+    >
+      <Icon className="h-5 w-5" aria-hidden="true" />
+    </button>
   )
 }
 
@@ -50,349 +48,283 @@ export default function ReviewsCarousel({
   reviews = [],
   averageRating,
   totalReviewCount,
-  autoScroll = true,
-  autoScrollInterval = 5000,
-  minStars = 4,
+  autoScroll,
+  autoScrollInterval,
+  minStars,
+  previewCharacters = 145,
 }) {
   const carouselRef = useRef(null)
-
+  const indexRef = useRef(0)
   const [expanded, setExpanded] = useState({})
-  const [isPaused, setIsPaused] = useState(false)
+  const [hovered, setHovered] = useState(false)
+  const [touching, setTouching] = useState(false)
+  const [focused, setFocused] = useState(false)
+  const [currentIndex, setCurrentIndex] = useState(0)
   const [navigationKey, setNavigationKey] = useState(0)
 
-  // Filter reviews by minimum star rating
-  const filteredReviews = useMemo(() => {
-    return reviews.filter((review) => Number(review.starRating) >= minStars)
-  }, [reviews, minStars])
+  const filteredReviews = useMemo(
+    () => reviews.filter((review) => Number(review.starRating) >= minStars),
+    [reviews, minStars],
+  )
 
-  // Duplicate reviews for infinite looping
-  const loopedReviews = useMemo(() => {
-    if (filteredReviews.length <= 1) {
-      return filteredReviews
-    }
+  const count = filteredReviews.length
+  const loopedReviews = useMemo(
+    () => (count > 1 ? [...filteredReviews, ...filteredReviews, ...filteredReviews] : filteredReviews),
+    [filteredReviews, count],
+  )
 
-    return [...filteredReviews, ...filteredReviews, ...filteredReviews]
-  }, [filteredReviews])
+  const hasExpandedReview = filteredReviews.some((review, i) => Boolean(expanded[review.reviewId ?? String(i)]))
+  const isPaused = hovered || touching || focused || hasExpandedReview
 
-  // Pause autoplay if a review is expanded
-  const hasExpandedReview = filteredReviews.some((review, index) => expanded[review.reviewId ?? String(index)])
-
-  // Scroll by one review card
   const scroll = useCallback((direction) => {
     const carousel = carouselRef.current
     if (!carousel) return
-
-    const distance = getSlideWidth(carousel)
-    if (!distance) return
+    const step = getSlideStep(carousel)
+    if (!step) return
 
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-
     carousel.scrollBy({
-      left: direction * distance,
-      behavior: reducedMotion ? 'auto' : 'smooth',
+      left: direction * step,
+      behavior: reducedMotion ? 'instant' : 'smooth',
     })
   }, [])
 
-  // Initialize and maintain the infinite carousel
+  // Keep the center copy visible, allowing movement in either direction.
   useLayoutEffect(() => {
     const carousel = carouselRef.current
-    const count = filteredReviews.length
-
     if (!carousel) return
-
+    indexRef.current = 0
+    setCurrentIndex(0)
     if (count <= 1) {
       carousel.scrollLeft = 0
       return
     }
 
-    const getGroupWidth = () => {
-      return getSlideWidth(carousel) * count
+    const getGroupWidth = () => getSlideStep(carousel) * count
+    const center = () => {
+      const groupWidth = getGroupWidth()
+      if (groupWidth) jumpTo(carousel, groupWidth)
     }
 
-    // Start on the middle copy of the reviews
-    const centerCarousel = () => {
-      const groupWidth = getGroupWidth()
-
-      if (groupWidth > 0) {
-        jumpWithoutAnimation(carousel, groupWidth)
-      }
-    }
-
-    // Invisibly reposition to matching reviews
-    const resetLoop = () => {
-      const groupWidth = getGroupWidth()
+    const finalizeScroll = () => {
+      const step = getSlideStep(carousel)
+      const groupWidth = step * count
       if (!groupWidth) return
+      let left = carousel.scrollLeft
 
-      const position = carousel.scrollLeft
-
-      if (position >= groupWidth * 2 - 2) {
-        jumpWithoutAnimation(carousel, position - groupWidth)
-      } else if (position < groupWidth - 2) {
-        jumpWithoutAnimation(carousel, position + groupWidth)
+      if (left >= 2 * groupWidth - step / 3) {
+        left -= groupWidth
+        jumpTo(carousel, left)
+      } else if (left < groupWidth - step / 3) {
+        left += groupWidth
+        jumpTo(carousel, left)
       }
+
+      const nextIndex = ((Math.round(left / step) % count) + count) % count
+      indexRef.current = nextIndex
+      setCurrentIndex(nextIndex)
     }
 
-    centerCarousel()
-
-    let scrollTimer
-
+    center()
+    let timer
     const handleScroll = () => {
-      window.clearTimeout(scrollTimer)
-
-      scrollTimer = window.setTimeout(() => {
-        resetLoop()
-      }, 180)
+      clearTimeout(timer)
+      timer = setTimeout(finalizeScroll, 180)
     }
 
-    carousel.addEventListener('scroll', handleScroll, {
-      passive: true,
-    })
+    carousel.addEventListener('scroll', handleScroll, { passive: true })
+    carousel.addEventListener('scrollend', finalizeScroll)
 
-    carousel.addEventListener('scrollend', resetLoop)
-
-    // Recalculate when the screen changes size
-    let previousWidth = carousel.clientWidth
-    let previousSlideWidth = getSlideWidth(carousel)
-
+    // Preserve the same logical review when card widths change.
+    let lastWidth = carousel.clientWidth
+    let lastStep = getSlideStep(carousel)
     const observer = new ResizeObserver(() => {
-      const currentWidth = carousel.clientWidth
-      const currentSlideWidth = getSlideWidth(carousel)
-
-      if (currentWidth !== previousWidth || Math.abs(currentSlideWidth - previousSlideWidth) > 0.5) {
-        previousWidth = currentWidth
-        previousSlideWidth = currentSlideWidth
-
-        centerCarousel()
+      const width = carousel.clientWidth
+      const step = getSlideStep(carousel)
+      if (width !== lastWidth || Math.abs(step - lastStep) > 0.5) {
+        lastWidth = width
+        lastStep = step
+        jumpTo(carousel, (count + indexRef.current) * step)
       }
     })
-
     observer.observe(carousel)
-
     const firstCard = carousel.querySelector('[data-review-card]')
-
-    if (firstCard) {
-      observer.observe(firstCard)
-    }
+    if (firstCard) observer.observe(firstCard)
 
     return () => {
-      window.clearTimeout(scrollTimer)
-
+      clearTimeout(timer)
       carousel.removeEventListener('scroll', handleScroll)
-      carousel.removeEventListener('scrollend', resetLoop)
-
+      carousel.removeEventListener('scrollend', finalizeScroll)
       observer.disconnect()
     }
-  }, [filteredReviews.length, minStars])
+  }, [count, filteredReviews])
 
-  // Automatically advance the carousel
   useEffect(() => {
-    if (!autoScroll || isPaused || hasExpandedReview || filteredReviews.length <= 1) {
-      return
-    }
+    if (!autoScroll || isPaused || count <= 1) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
 
-    // Respect reduced-motion accessibility settings
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      return
-    }
+    const timer = window.setInterval(() => scroll(1), autoScrollInterval)
+    return () => window.clearInterval(timer)
+  }, [autoScroll, autoScrollInterval, isPaused, count, navigationKey, scroll])
 
-    const interval = window.setInterval(
-      () => {
-        scroll(1)
-      },
-      Math.max(1500, autoScrollInterval),
-    )
-
-    return () => {
-      window.clearInterval(interval)
-    }
-  }, [autoScroll, autoScrollInterval, isPaused, hasExpandedReview, filteredReviews.length, navigationKey, scroll])
-
-  // Handle manual arrow navigation
-  const handleNavigation = (direction) => {
+  const navigate = (direction) => {
     scroll(direction)
-
-    // Restart autoplay timer
-    setNavigationKey((prev) => prev + 1)
-  }
-
-  // Expand or collapse individual reviews
-  const toggleReview = (id) => {
-    setExpanded((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }))
+    setNavigationKey((value) => value + 1)
   }
 
   return (
     <section
-      className="mx-auto w-full min-w-0 max-w-7xl px-4 py-8 sm:px-6"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
-      onTouchStart={() => setIsPaused(true)}
-      onTouchEnd={() => setIsPaused(false)}
-      onTouchCancel={() => setIsPaused(false)}
-      onFocusCapture={() => setIsPaused(true)}
+      id="reviews"
+      aria-labelledby="reviews-title"
+      className="mx-auto w-full min-w-0 max-w-7xl scroll-mt-24 px-4 py-8 sm:px-6 sm:py-12"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onTouchStart={() => setTouching(true)}
+      onTouchEnd={() => setTouching(false)}
+      onTouchCancel={() => setTouching(false)}
+      onFocusCapture={() => setFocused(true)}
       onBlurCapture={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget)) {
-          setIsPaused(false)
-        }
+        if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false)
       }}
     >
-      {/* Header */}
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">What Our Customers Are Saying</h2>
-
-        <p className="mt-1 text-sm text-gray-500">
-          {averageRating != null && `${averageRating} / 5`}
-          {totalReviewCount != null && ` · ${totalReviewCount} Google reviews`}
-        </p>
+      <div className="mb-5 sm:mb-7">
+        <h2 id="reviews-title" className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+          Customer Reviews
+        </h2>
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-600">
+          {averageRating != null && (
+            <span className="inline-flex items-center gap-1 font-semibold text-slate-900">
+              <span aria-hidden="true" className="text-amber-500">
+                ★
+              </span>
+              {averageRating} / 5
+            </span>
+          )}
+          {totalReviewCount != null && <span>· {totalReviewCount} Google reviews</span>}
+        </div>
       </div>
 
-      {/* Empty state */}
-      {filteredReviews.length === 0 && (
-        <p className="py-8 text-center text-gray-500">No reviews meet the minimum rating of {minStars} stars.</p>
-      )}
+      {count === 0 ? (
+        <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-8 text-center text-slate-600">
+          No reviews meet the minimum rating of {minStars} stars.
+        </p>
+      ) : (
+        <>
+          <div className="relative sm:mx-9">
+            {/* Side arrows on tablet/desktop only. */}
+            <Arrow
+              direction="previous"
+              disabled={count <= 1}
+              onClick={() => navigate(-1)}
+              className="absolute -left-12 top-1/2 z-10 hidden -translate-y-1/2 sm:flex"
+            />
 
-      {/* Infinite carousel with centered arrows */}
-      {filteredReviews.length > 0 && (
-        <div className="grid grid-cols-[2.25rem_minmax(0,1fr)_2.25rem] items-center gap-2 sm:grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] sm:gap-3">
-          {/* Previous arrow */}
-          <button
-            type="button"
-            aria-label="Previous review"
-            disabled={filteredReviews.length <= 1}
-            onClick={() => handleNavigation(-1)}
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 shadow-lg transition-transform duration-200 hover:scale-105 hover:bg-gray-100 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 sm:h-11 sm:w-11"
-          >
-            <ChevronLeftIcon className="h-5 w-5" />
-          </button>
+            <div
+              ref={carouselRef}
+              role="region"
+              aria-roledescription="carousel"
+              aria-label="Google customer reviews"
+              aria-live="off"
+              className="flex min-w-0 snap-x snap-mandatory items-start gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            >
+              {loopedReviews.map((review, index) => {
+                const originalIndex = index % count
+                const id = review.reviewId ?? String(originalIndex)
+                const name = review.reviewer?.displayName || 'Anonymous'
+                const photo = review.reviewer?.profilePhotoUrl
+                const reviewText = review.comment || ''
+                const canExpand = reviewText.length > previewCharacters
+                const isExpanded = Boolean(expanded[id])
+                const text =
+                  !canExpand || isExpanded ? reviewText : `${reviewText.slice(0, previewCharacters).trimEnd()}…`
+                const rating = Math.min(5, Math.max(0, Math.round(Number(review.starRating) || 0)))
+                const date = review.createTime ? new Date(review.createTime) : null
+                const dateLabel =
+                  date && !Number.isNaN(date.getTime())
+                    ? date.toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' })
+                    : ''
 
-          {/* Review cards */}
-          <div
-            ref={carouselRef}
-            role="region"
-            aria-roledescription="carousel"
-            aria-label="Customer reviews"
-            aria-live="off"
-            className="flex min-w-0 snap-x snap-mandatory gap-4 overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden"
-            style={{ scrollbarWidth: 'none' }}
-          >
-            {loopedReviews.map((review, index) => {
-              const id = review.reviewId ?? String(index % filteredReviews.length)
+                return (
+                  <article
+                    key={`${index}-${id}`}
+                    data-review-card
+                    className="relative box-border w-full shrink-0 snap-start rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:w-[calc((100%_-_1rem)/2)] sm:p-6 lg:w-[calc((100%_-_2rem)/3)]"
+                  >
+                    <img
+                      src={GOOGLE_LOGO}
+                      alt="Google"
+                      width="23"
+                      height="23"
+                      className="absolute right-5 top-5 h-[23px] w-[23px] object-contain"
+                    />
 
-              const text = review.comment || ''
-              const isExpanded = Boolean(expanded[id])
-              const canExpand = text.length > MAX_CHARACTERS
-
-              const displayedText = isExpanded || !canExpand ? text : text.slice(0, MAX_CHARACTERS).trimEnd() + '…'
-
-              const reviewerName = review.reviewer?.displayName || 'Anonymous'
-
-              const profilePhoto = review.reviewer?.profilePhotoUrl
-
-              const rating = Math.max(0, Math.min(5, Math.round(review.starRating || 0)))
-
-              const date = review.createTime ? new Date(review.createTime) : null
-
-              const dateLabel =
-                date && !Number.isNaN(date.getTime())
-                  ? date.toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                      timeZone: 'UTC',
-                    })
-                  : ''
-
-              return (
-                <article
-                  key={`${index}-${id}`}
-                  data-review-card
-                  className="
-                    relative box-border w-full shrink-0 snap-start
-                    rounded-2xl border border-gray-200
-                    bg-white p-4 shadow-sm sm:p-6
-                    transition-shadow hover:shadow-md
-                    sm:w-[calc((100%_-_1rem)/2)]
-                    lg:w-[calc((100%_-_2rem)/3)]
-                  "
-                >
-                  {/* Google logo */}
-                  <div className="absolute right-5 top-5">
-                    <GoogleIcon />
-                  </div>
-
-                  {/* Reviewer information */}
-                  <div className="flex items-center gap-3 pr-9">
-                    {/* Profile picture */}
-                    <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-200 font-semibold text-gray-600">
-                      <span>{reviewerName.charAt(0).toUpperCase()}</span>
-
-                      {profilePhoto && (
-                        <img
-                          src={profilePhoto}
-                          alt={`${reviewerName}'s profile`}
-                          loading="lazy"
-                          referrerPolicy="no-referrer"
-                          className="absolute inset-0 h-full w-full object-cover"
-                          onError={(event) => {
-                            event.currentTarget.style.display = 'none'
-                          }}
-                        />
-                      )}
+                    <div className="flex min-w-0 items-center gap-3 pr-9">
+                      <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-100 text-sm font-semibold text-slate-600">
+                        {name.charAt(0).toUpperCase()}
+                        {photo && (
+                          <img
+                            src={photo}
+                            alt=""
+                            loading="lazy"
+                            referrerPolicy="no-referrer"
+                            className="absolute inset-0 h-full w-full object-cover"
+                            onError={(event) => {
+                              event.currentTarget.style.display = 'none'
+                            }}
+                          />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="break-words text-sm font-semibold leading-5 text-slate-900">{name}</p>
+                        <p className="mt-0.5 text-xs text-slate-500">{dateLabel}</p>
+                      </div>
                     </div>
 
-                    {/* Name and date */}
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold text-gray-900">{reviewerName}</p>
-
-                      <p className="text-sm text-gray-500">{dateLabel}</p>
+                    <div className="mt-4 flex gap-0.5 text-lg" aria-label={`${review.starRating} out of 5 stars`}>
+                      {Array.from({ length: 5 }, (_, star) => (
+                        <span
+                          key={star}
+                          aria-hidden="true"
+                          className={star < rating ? 'text-amber-500' : 'text-slate-200'}
+                        >
+                          ★
+                        </span>
+                      ))}
                     </div>
-                  </div>
 
-                  {/* Star rating */}
-                  <div className="mt-4 flex gap-0.5 text-xl" aria-label={`${review.starRating} out of 5 stars`}>
-                    {Array.from({ length: 5 }, (_, i) => (
-                      <span key={i} aria-hidden="true" className={i < rating ? 'text-amber-500' : 'text-gray-200'}>
-                        ★
-                      </span>
-                    ))}
-                  </div>
+                    <p className="mt-3 whitespace-pre-line break-words text-base leading-7 text-slate-700">{text}</p>
+                    {canExpand && (
+                      <button
+                        type="button"
+                        aria-expanded={isExpanded}
+                        onClick={() => setExpanded((state) => ({ ...state, [id]: !state[id] }))}
+                        className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-indigo-700 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                      >
+                        {isExpanded ? 'Read less' : 'Read more'}
+                      </button>
+                    )}
+                  </article>
+                )
+              })}
+            </div>
 
-                  {/* Review text */}
-                  <p className="mt-3 whitespace-pre-line leading-relaxed text-gray-700">{displayedText}</p>
-
-                  {/* Read more / Read less */}
-                  {canExpand && (
-                    <button
-                      type="button"
-                      aria-expanded={isExpanded}
-                      onClick={() => toggleReview(id)}
-                      className="
-                        mt-3 cursor-pointer font-medium
-                        text-blue-600 transition-colors
-                        hover:text-blue-800 hover:underline
-                      "
-                    >
-                      {isExpanded ? 'Read less' : 'Read more'}
-                    </button>
-                  )}
-                </article>
-              )
-            })}
+            <Arrow
+              direction="next"
+              disabled={count <= 1}
+              onClick={() => navigate(1)}
+              className="absolute -right-12 top-1/2 z-10 hidden -translate-y-1/2 sm:flex"
+            />
           </div>
 
-          {/* Next arrow */}
-          <button
-            type="button"
-            aria-label="Next review"
-            disabled={filteredReviews.length <= 1}
-            onClick={() => handleNavigation(1)}
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 shadow-lg transition-transform duration-200 hover:scale-105 hover:bg-gray-100 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 sm:h-11 sm:w-11"
-          >
-            <ChevronRightIcon className="h-5 w-5" />
-          </button>
-        </div>
+          {/* Controls live BELOW the card on phones, never over text. */}
+          <div className="mt-4 flex items-center justify-center gap-5 sm:hidden">
+            <Arrow direction="previous" disabled={count <= 1} onClick={() => navigate(-1)} />
+            <span className="min-w-14 text-center text-sm font-medium tabular-nums text-slate-600" aria-live="polite">
+              {currentIndex + 1} / {count}
+            </span>
+            <Arrow direction="next" disabled={count <= 1} onClick={() => navigate(1)} />
+          </div>
+        </>
       )}
     </section>
   )
