@@ -16,23 +16,20 @@ export default function VehicleCard({ car, priority = false }) {
       </div>
 
       {/* Vehicle information */}
-      <div className="flex flex-1 flex-col p-4 pt-3 sm:p-6 sm:pt-3">
-        <div className="min-w-0">
-          <h2 className="font-serif text-xl font-bold tracking-tight text-stone-950 sm:text-2xl">{car.model}</h2>
+      <div className="flex-1 p-5">
+        <h2 className="font-serif text-xl font-bold tracking-tight text-stone-950 sm:text-2xl">{car.model}</h2>
 
-          <p className="mt-2 text-sm leading-6 text-stone-600">{car.description}</p>
-        </div>
-
-        {/* Button — no functionality yet */}
-        <button
-          type="button"
-          aria-label={`View ${car.model} details`}
-          className="mt-5 flex min-h-11 w-full items-center justify-center gap-2 self-end rounded-full border border-stone-300 px-4 text-sm font-medium text-stone-900 transition-colors hover:bg-stone-900 hover:text-white sm:mt-auto sm:size-12 sm:w-12 sm:p-0"
-        >
-          <span className="sm:sr-only">View details</span>
-          <ArrowRightIcon className="size-5 shrink-0" />
-        </button>
+        <p className="mt-2 text-sm leading-6 text-stone-600">{car.description}</p>
       </div>
+
+      {/* Full-width bottom button */}
+      <button
+        type="button"
+        className="mx-2 mb-2 flex min-h-14 active:bg-stone-200 items-center justify-center gap-3 rounded-xl border border-stone-200 bg-white px-5 py-3 text-sm font-medium text-stone-900 transition-all hover:cursor-pointer hover:bg-stone-400 hover:text-white"
+      >
+        View details
+        <ArrowRightIcon className="size-5 shrink-0" />
+      </button>
     </article>
   )
 }
