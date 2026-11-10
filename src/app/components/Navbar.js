@@ -3,22 +3,22 @@ import Tag from './Tag.js'
 import { Battery50Icon } from '@heroicons/react/24/solid'
 
 const nagivationButtons = [
-    {
-        title: 'About',
-        href: '/about',
-        isNew: true,
-      },
-      {
-          title: 'Fleet',
-          href: '/fleet',
-          isNew: true,
-        },
-        //Bottom
-        {
-          title: 'Home',
-          href: '/',
-          isNew: false,
-        },
+  {
+    title: 'Our Fleet',
+    href: '/fleet',
+    isNew: true,
+  },
+  {
+    title: 'About',
+    href: '/about',
+    isNew: true,
+  },
+  //RIGHT
+  {
+    title: 'Home',
+    href: '/',
+    isNew: false,
+  },
 ]
 
 export default function Navbar() {

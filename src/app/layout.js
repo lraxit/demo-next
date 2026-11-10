@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata = {
-  title: 'Elite Limosuine',
+  title: 'Elite Limousine',
   description: `Serving NorCal 41 years`,
 }
 

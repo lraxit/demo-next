@@ -1,5 +1,5 @@
-import cars from './vehicles.js'
-import VehicleCard from './VehicleCard.js'
+import { cars } from '../data/vehicles.js'
+import VehicleCard from '../components/VehicleCard.js'
 import Carousel from '../components/Carousel.js'
 
 export default function Fleet() {
@@ -8,8 +8,8 @@ export default function Fleet() {
       {/* Cars body */}
       <div className="flex">
         <Carousel
-          cards={cars().map((car, index) => (
-            <VehicleCard key={index} car={car} />
+          cards={Object.entries(cars).map(([slug, car]) => (
+            <VehicleCard key={slug} slug={slug} car={car} />
           ))}
         />
       </div>

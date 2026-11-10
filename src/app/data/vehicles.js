@@ -1,0 +1,66 @@
+const limoimages = '/images/limos'
+export const cars = {
+  'hummer-limousine': {
+    model: 'Hummer Limousine',
+    passengers: '5-10',
+    description: 'Midnight Black & Chrome Krystal H2 Hummer Mega-Stretch Limousine',
+    thumbnailImage: `${limoimages}/hummer.png`,
+    images: [],
+  },
+  'escalade-limousine': {
+    model: 'Escalade Limousine',
+    passengers: '5-10',
+    description: 'Pristine White Executive Super-Stretch Escalade Limousine',
+    thumbnailImage: `${limoimages}/escalade.png`,
+    images: [],
+  },
+  'lincoln-limousine': {
+    model: 'Lincoln Limousine',
+    passengers: '12-14',
+    description: 'Raven Black Nova Ultra-Stretch Lincoln Limousine',
+    thumbnailImage: `${limoimages}/lincoln.png`,
+    images: [],
+  },
+  'chrysler-limousine': {
+    model: 'Chrysler Limousine',
+    passengers: '6-10',
+    description: 'Royale Vanilla Stretch Chrysler 300 Limousine',
+    thumbnailImage: `${limoimages}/Chrysler.png`,
+    images: [],
+  },
+  'executive-van': {
+    model: 'Executive Van',
+    passengers: '8-10',
+    description: 'White Executive Corporate Van ',
+    thumbnailImage: `${limoimages}/van.png`,
+    images: [],
+  },
+  'luxury-suv': {
+    model: 'Luxury SUV',
+    passengers: '6',
+    description: 'Executive Black Escalade ESV Premium SUV',
+    thumbnailImage: `${limoimages}/SUV.png`,
+    images: [],
+  },
+  'corporate-mercedes': {
+    model: 'Corporate Mercedes',
+    passengers: '3',
+    description: 'Corporate Black Mercedes S600 Sedan',
+    thumbnailImage: `${limoimages}/Mercedes.png`,
+    images: [],
+  },
+  'luxury-bus': {
+    model: 'Luxury Limo Bus',
+    passengers: '20',
+    description: 'Luxury Limo Busses ',
+    thumbnailImage: `${limoimages}/bus.png`,
+    images: [],
+  },
+  'entertainer-bus': {
+    model: 'Entertainer Limo Bus',
+    passengers: '40',
+    description: 'Executive Entertainer Bus',
+    thumbnailImage: `${limoimages}/bigbus.png`,
+    images: [],
+  },
+}

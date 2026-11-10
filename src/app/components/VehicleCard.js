@@ -1,8 +1,15 @@
 import { ArrowRightIcon } from '@heroicons/react/24/outline'
+import { UsersIcon } from '@heroicons/react/24/solid'
 
-export default function VehicleCard({ car, priority = false }) {
+export default function VehicleCard({ slug, car, priority = false }) {
   return (
-    <article className="flex h-full w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm transition-shadow hover:shadow-md sm:rounded-3xl">
+    <article className="relative flex h-full w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm transition-shadow hover:shadow-md sm:rounded-3xl hover:cursor-pointer">
+      {/*Passengers*/}
+      <div className="absolute right-3 top-3 flex items-center gap-2 rounded-full border border-stone-200 bg-white/90 px-3 py-1.5 text-sm font-medium text-stone-700">
+        <UsersIcon className="size-5 shrink-0" />
+        <span>{car.passengers}</span>
+        <span className="sr-only">passengers</span>
+      </div>
       {/* Vehicle image */}
       <div className="flex h-44 items-center justify-center bg-gradient-to-b from-stone-50 to-white px-4 pt-4 sm:h-56 sm:px-6 sm:pt-6">
         <img
@@ -23,13 +30,13 @@ export default function VehicleCard({ car, priority = false }) {
       </div>
 
       {/* Full-width bottom button */}
-      <button
-        type="button"
+      <a
+        href={`/fleet/${slug}`}
         className="mx-2 mb-2 flex min-h-14 active:bg-stone-200 items-center justify-center gap-3 rounded-xl border border-stone-200 bg-white px-5 py-3 text-sm font-medium text-stone-900 transition-all hover:cursor-pointer hover:bg-stone-400 hover:text-white"
       >
         View details
         <ArrowRightIcon className="size-5 shrink-0" />
-      </button>
+      </a>
     </article>
   )
 }

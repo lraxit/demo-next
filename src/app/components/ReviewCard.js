@@ -36,7 +36,12 @@ export default function ReviewCard({ profileImage, name = 'Anonymous', stars = 5
     <article className="flex w-full flex-1 flex-col rounded-xl border border-stone-200 bg-white p-5 shadow-md">
       <div className="mb-4 flex items-center gap-3">
         {profileImage ? (
-          <img src={profileImage} alt="" className="size-11 shrink-0 rounded-full object-cover" />
+          <img
+            src={profileImage}
+            alt=""
+            className="size-11 shrink-0 rounded-full object-cover"
+            referrerPolicy="no-referrer"
+          />
         ) : (
           <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-sm font-semibold text-white">
             {initials}
@@ -55,7 +60,7 @@ export default function ReviewCard({ profileImage, name = 'Anonymous', stars = 5
         </div>
 
         <img
-          src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Google_Favicon_2025.svg"
+          src= {`/images/Google_Favicon_2025.svg`}
           alt="Google"
           className="size-6 shrink-0"
         />
