@@ -25,7 +25,7 @@ export const cars = {
     model: 'Chrysler Limousine',
     passengers: '6-10',
     description: 'Royale Vanilla Stretch Chrysler 300 Limousine',
-    thumbnailImage: `${limoimages}/Chrysler.png`,
+    thumbnailImage: `${limoimages}/chrysler.png`,
     images: [],
   },
   'executive-van': {
@@ -39,14 +39,14 @@ export const cars = {
     model: 'Luxury SUV',
     passengers: '6',
     description: 'Executive Black Escalade ESV Premium SUV',
-    thumbnailImage: `${limoimages}/SUV.png`,
+    thumbnailImage: `${limoimages}/suv.png`,
     images: [],
   },
   'corporate-mercedes': {
     model: 'Corporate Mercedes',
     passengers: '3',
     description: 'Corporate Black Mercedes S600 Sedan',
-    thumbnailImage: `${limoimages}/Mercedes.png`,
+    thumbnailImage: `${limoimages}/mercedes.png`,
     images: [],
   },
   'luxury-bus': {
